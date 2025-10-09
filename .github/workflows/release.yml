@@ -42,7 +42,7 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Install dependencies (ubuntu only)
+      - name: Install dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
@@ -51,13 +51,42 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3
+        with:
+          configuration: ".github/changelog-config.json"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          releaseName: "Tauri App Boilerplate ${{ github.ref_name }}"
+          releaseBody: |
+            ## Changelog
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## Downloads
+
+            Choose the installer for your operating system:
+
+            **macOS:**
+            - Apple Silicon (M1/M2/M3/M4): `Tauri-App-Boilerplate_*_aarch64.dmg`
+            - Intel Macs: `Tauri-App-Boilerplate_*_x86_64.dmg`
+
+            **Windows:**
+            - Installer: `Tauri-App-Boilerplate_*_x64_en-US.msi`
+            - Portable: `Tauri-App-Boilerplate_*_x64-setup.exe`
+
+            **Linux:**
+            - Debian/Ubuntu: `tauri-app-boilerplate_*_amd64.deb`
+            - Portable: `tauri-app-boilerplate_*_amd64.AppImage`
+            - RPM: `tauri-app-boilerplate_*_amd64.rpm`
+
+            Just download, run the installer, and you're ready to go!
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
